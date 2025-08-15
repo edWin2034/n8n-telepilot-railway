@@ -1,20 +1,19 @@
 FROM n8nio/n8n:latest
 
-# 1) Устанавливаем TDLib (Alpine)
-USER root
-RUN apk update \
- && apk add --no-cache tdlib \
- && (ls -l /usr/lib/libtdjson* || true) \
- && (test -e /usr/lib/libtdjson.so || ln -s /usr/lib/libtdjson.so.* /usr/lib/libtdjson.so || true)
+# 1) НЕ ставим tdlib через apk (его нет в репах Alpine)
+#    Сразу переходим к установке community-нод вместе с готовой TDLib
 
-# 2) Ставим Telepilot как community node
 USER node
+
+# 2) Устанавливаем Telepilot и предсобранные бинарники TDLib от Telepilot
 RUN mkdir -p /home/node/.n8n/nodes \
  && cd /home/node/.n8n/nodes \
  && npm init -y >/dev/null 2>&1 || true \
- && npm install @telepilotco/n8n-nodes-telepilot
+ && npm install @telepilotco/n8n-nodes-telepilot @telepilotco/tdlib-binaries-prebuilt
 
-# 3) Явный путь к TDLib (на всякий случай)
-ENV TELEPILOT_TDLIB_PATH=/usr/lib/libtdjson.so
+# 3) Явно укажем путь к libtdjson.so из пакета Telepilot
+#    (именно к нему обращался модуль в сообщении об ошибке)
+ENV TELEPILOT_TDLIB_PATH=/home/node/.n8n/nodes/node_modules/@telepilotco/tdlib-binaries-prebuilt/prebuilds/libtdjson.so
 
+# Рабочая директория по умолчанию
 WORKDIR /home/node
