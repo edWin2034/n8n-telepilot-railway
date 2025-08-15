@@ -1,12 +1,11 @@
 FROM n8nio/n8n:latest
 
-# 1) Устанавливаем TDLib (для Alpine-образа n8n)
+# 1) Устанавливаем TDLib (Alpine)
 USER root
-RUN apk add --no-cache telegram-tdlib \
- && echo "TDLib installed"
-
-# (Опционально) создаём симлинк, если имя с версией
-RUN ln -s /usr/lib/libtdjson.so /usr/lib/libtdjson.so.1 2>/dev/null || true
+RUN apk update \
+ && apk add --no-cache tdlib \
+ && (ls -l /usr/lib/libtdjson* || true) \
+ && (test -e /usr/lib/libtdjson.so || ln -s /usr/lib/libtdjson.so.* /usr/lib/libtdjson.so || true)
 
 # 2) Ставим Telepilot как community node
 USER node
@@ -15,8 +14,7 @@ RUN mkdir -p /home/node/.n8n/nodes \
  && npm init -y >/dev/null 2>&1 || true \
  && npm install @telepilotco/n8n-nodes-telepilot
 
-# 3) Путь к TDLib
+# 3) Явный путь к TDLib (на всякий случай)
 ENV TELEPILOT_TDLIB_PATH=/usr/lib/libtdjson.so
 
-# Рабочая директория по умолчанию
 WORKDIR /home/node
